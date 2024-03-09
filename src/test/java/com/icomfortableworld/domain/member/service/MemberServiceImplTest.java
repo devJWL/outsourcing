@@ -5,6 +5,7 @@ import com.icomfortableworld.domain.follow.repository.FollowRepository;
 import com.icomfortableworld.domain.member.dto.request.LoginRequestDto;
 import com.icomfortableworld.domain.member.dto.request.SignupRequestDto;
 import com.icomfortableworld.domain.member.dto.response.MemberResponseDto;
+import com.icomfortableworld.domain.member.dto.response.MemberUpdateResponseDto;
 import com.icomfortableworld.domain.member.entity.Member;
 import com.icomfortableworld.domain.member.entity.MemberRoleEnum;
 import com.icomfortableworld.domain.member.entity.PasswordHistory;
@@ -13,8 +14,6 @@ import com.icomfortableworld.domain.member.exception.MemberErrorCode;
 import com.icomfortableworld.domain.member.model.MemberModel;
 import com.icomfortableworld.domain.member.repository.history.PasswordHistoryJpaRepository;
 import com.icomfortableworld.domain.member.repository.member.MemberRepository;
-import com.icomfortableworld.domain.message.repository.MessageJpaRepository;
-import com.icomfortableworld.jwt.JwtProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -31,8 +30,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.icomfortableworld.domain.member.TestMember.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -48,11 +46,7 @@ class MemberServiceImplTest {
     private FollowRepository followRepository;
     @Mock
     PasswordEncoder passwordEncoder;
-    @Mock
-    private MessageJpaRepository messageJpaRepository;
 
-    @Mock
-    JwtProvider jwtProvider;
     @InjectMocks
     private MemberServiceImpl memberService;
 
@@ -72,6 +66,7 @@ class MemberServiceImplTest {
         @Test
         @DisplayName("일반회원 가입 성공 테스트")
         void signupSuccessTest() {
+
             //given
             String encodedPassword = passwordEncoder.encode(TEST_MEMBER_PASSWORD);
             MemberModel memberModel = new MemberModel(TEST_MEMBER_ID, TEST_MEMBER_USERNAME, TEST_MEMBER_EMAIL, TEST_MEMBER_NICKNAME,
@@ -94,6 +89,7 @@ class MemberServiceImplTest {
         @Test
         @DisplayName("일반회원 가입 실패 테스트 중복된 username")
         void signupFailDuplicatedUsernameTest() {
+
             //given
             SignupRequestDto signupRequestDto = new SignupRequestDto(
                     TEST_MEMBER_USERNAME, TEST_MEMBER_EMAIL, TEST_MEMBER_NICKNAME,
@@ -107,6 +103,7 @@ class MemberServiceImplTest {
             // when
             String message = assertThrows(CustomMemberException.class,
                     () -> memberService.signup(signupRequestDto)).getMessage();
+
             // then
             assertEquals(MemberErrorCode.MEMBER_ERROR_CODE_USERNAME_ALREADY_EXISTS.getMessage(),
                     message);
@@ -115,6 +112,7 @@ class MemberServiceImplTest {
         @Test
         @DisplayName("일반회원 가입 실패 테스트 중복된 email")
         void signupFailDuplicatedEmailTest() {
+
             //given
             SignupRequestDto signupRequestDto = new SignupRequestDto(
                     TEST_MEMBER_USERNAME, TEST_MEMBER_EMAIL, TEST_MEMBER_NICKNAME,
@@ -125,8 +123,10 @@ class MemberServiceImplTest {
                     encodedPassword, null, MemberRoleEnum.USER, null);
             given(memberRepository.findByEmail(TEST_MEMBER_EMAIL)).willReturn(Optional.of(memberModel));
 
-            // when & then
+            // when
             String message = assertThrows(CustomMemberException.class, () -> memberService.signup(signupRequestDto)).getMessage();
+
+            // then
             assertEquals(MemberErrorCode.MEMBER_ERROR_CODE_EMAIL_ALREADY_EXISTS.getMessage(),
                     message);
         }
@@ -134,6 +134,7 @@ class MemberServiceImplTest {
         @Test
         @DisplayName("관리자회원 가입 실패 올바르지 않은 관리자 토큰")
         void signupFailInvalidTokenTest() {
+
             //given
             ReflectionTestUtils.setField(memberService, "adminToken", "valid admin token");
             String invalidAdminToken = "invalid admin Token";
@@ -141,8 +142,10 @@ class MemberServiceImplTest {
                     TEST_MEMBER_USERNAME, TEST_MEMBER_EMAIL, TEST_MEMBER_NICKNAME,
                     TEST_MEMBER_PASSWORD, null, true, invalidAdminToken);
 
-            // when & then
+            // when
             String message = assertThrows(CustomMemberException.class, () -> memberService.signup(signupRequestDto)).getMessage();
+
+            // then
             assertEquals(MemberErrorCode.MEMBER_ERROR_CODE_ADMIN_TOKEN_MISMATCH.getMessage(),
                     message);
         }
@@ -227,11 +230,12 @@ class MemberServiceImplTest {
             // given
             MemberModel memberModel = new MemberModel(TEST_MEMBER_ID, TEST_MEMBER_USERNAME, TEST_MEMBER_EMAIL, TEST_MEMBER_NICKNAME,
                     TEST_MEMBER_PASSWORD, null, MemberRoleEnum.USER, null);
+            given(memberRepository.findByIdOrElseThrow(TEST_MEMBER_ID)).willReturn(memberModel);
 
             Follow follow = new Follow(1L, TEST_MEMBER_ID, TEST_ANOTHER_MEMBER_ID, null);
-            given(memberRepository.findByIdOrElseThrow(TEST_MEMBER_ID)).willReturn(memberModel);
             given(followRepository.findByFromId(TEST_MEMBER_ID)).willReturn(
                     List.of(follow));
+
             // when
             MemberResponseDto memberResponseDto = memberService.getMemeber(TEST_MEMBER_ID);
 
@@ -254,6 +258,82 @@ class MemberServiceImplTest {
 
             // then
             assertEquals(MemberErrorCode.MEMBER_ERROR_CODE_NOT_FOUND.getMessage(), message);
+        }
+    }
+
+    @Nested
+    @DisplayName("회원 전체 조회 테스트")
+    class inquiredAllMemberTest {
+        @Test
+        @DisplayName("회원 전체 조회 성공 테스트 관리자 권한")
+        void getAllMemberSuccessTest() {
+
+            // given
+            MemberModel memberModel = new MemberModel(TEST_MEMBER_ID, TEST_MEMBER_USERNAME, TEST_MEMBER_EMAIL, TEST_MEMBER_NICKNAME,
+                    TEST_MEMBER_PASSWORD, null, MemberRoleEnum.USER, null);
+            given(memberRepository.findAll()).willReturn(List.of(memberModel));
+
+            Follow follow = new Follow(1L, TEST_MEMBER_ID, TEST_ANOTHER_MEMBER_ID, null);
+            given(followRepository.findByFromId(TEST_MEMBER_ID)).willReturn(
+                    List.of(follow));
+
+            MemberRoleEnum memberRoleEnum = MemberRoleEnum.ADMIN;
+
+            // when
+            List<MemberResponseDto> memberResponseDtoList = memberService.getMemebers(memberRoleEnum);
+
+            // then
+            assertEquals(TEST_MEMBER_USERNAME, memberResponseDtoList.get(0).getUsername());
+            assertEquals(1L, memberResponseDtoList.get(0).getFollowingCount());
+        }
+
+        @Test
+        @DisplayName("회원 전체 조회 실패 테스트 일반회원은 조회 불가")
+        void getAllMemberFailTest() {
+
+            // given
+            MemberRoleEnum memberRoleEnum = MemberRoleEnum.USER;
+
+            // when
+            String message = assertThrows(CustomMemberException.class,
+                    () -> memberService.getMemebers(memberRoleEnum)).getMessage();
+
+            // then
+            assertEquals(MemberErrorCode.MEMBER_ERROR_CODE_NOT_AUTH.getMessage(), message);
+        }
+    }
+
+    @Nested
+    @DisplayName("회원 정보 변경 테스트")
+    class updatedMemberTest {
+        @Test
+        @DisplayName("회원 정보 변경 성공 테스트")
+        void updateMemberSuccessTest() {
+            // given
+            String encodedPassword = passwordEncoder.encode(TEST_MEMBER_PASSWORD);
+            MemberModel memberModel = new MemberModel(TEST_MEMBER_ID, TEST_MEMBER_USERNAME, TEST_MEMBER_EMAIL, TEST_MEMBER_NICKNAME,
+                    encodedPassword, "null", MemberRoleEnum.USER, null);
+            given(memberRepository.findByIdOrElseThrow(TEST_MEMBER_ID)).willReturn(memberModel);
+
+            final String newNickname = "newNickname";
+            final String newIntroduction = "newIntroduction";
+            final String newPassword = "newPassword";
+            final String encodedNewPassword = passwordEncoder.encode(newPassword);
+            MemberModel updatedMemberModel = new MemberModel(TEST_MEMBER_ID, TEST_MEMBER_USERNAME, TEST_MEMBER_EMAIL,
+                    newNickname, encodedNewPassword, newIntroduction, MemberRoleEnum.USER, null);
+            given(memberRepository.updateMember(TEST_MEMBER_ID, newNickname, newIntroduction, newPassword))
+                    .willReturn(updatedMemberModel);
+
+            // when
+            MemberModel foundModel = memberRepository.findByIdOrElseThrow(TEST_MEMBER_ID);
+            MemberUpdateResponseDto memberUpdateResponseDto = MemberUpdateResponseDto
+                    .from(memberRepository.updateMember(foundModel.getMemberId(), newNickname, newIntroduction, newPassword));
+
+            // then
+            assertNotEquals(memberModel.getNickname(), newNickname);
+            assertNotEquals(memberModel.getIntroduction(), newIntroduction);
+            assertEquals(newNickname, memberUpdateResponseDto.getNickname());
+            assertEquals(newIntroduction, memberUpdateResponseDto.getIntroduction());
         }
     }
 }

@@ -76,6 +76,9 @@ public class MemberRepositoryImpl implements MemberRepository {
 			member.updateIntroduction(newIntroduction);
 		}
 		if (newPassword != null) {
+			if (passwordEncoder.matches(newPassword, member.getPassword())) {
+				throw new CustomMemberException(MemberErrorCode.MEMBER_ERROR_CODE_PASSWORD_MATCH);
+			}
 			checkRecent3Password(memberId, newPassword);
 			String encryptedPassword = passwordEncoder.encode(newPassword);
 			member.updatePassword(encryptedPassword);

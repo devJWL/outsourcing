@@ -130,10 +130,6 @@ public class MemberServiceImpl implements MemberService {
 			throw new CustomMemberException(MemberErrorCode.MEMBER_ERROR_CODE_PASSWORD_MISMATCH);
 		}
 
-		if (isEqualsPassword(memberUpdateRequestDto.getPassword(), memberModel.getPassword())) {
-			throw new CustomMemberException(MemberErrorCode.MEMBER_ERROR_CODE_PASSWORD_MATCH);
-		}
-
 		String newNickname = memberUpdateRequestDto.getNickname();
 		String newIntroduction = memberUpdateRequestDto.getIntroduction();
 		String newPassword = memberUpdateRequestDto.getNewPassword();

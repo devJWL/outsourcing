@@ -12,7 +12,7 @@ import com.icomfortableworld.domain.comment.exception.CommentErrorCode;
 import com.icomfortableworld.domain.comment.exception.CustomCommentException;
 import com.icomfortableworld.domain.comment.model.CommentModel;
 import com.icomfortableworld.domain.feed.repository.FeedRepository;
-import com.icomfortableworld.domain.member.repository.MemberRepository;
+import com.icomfortableworld.domain.member.repository.member.MemberRepository;
 
 import lombok.RequiredArgsConstructor;
 

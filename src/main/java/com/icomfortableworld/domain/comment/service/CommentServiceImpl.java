@@ -14,7 +14,7 @@ import com.icomfortableworld.domain.comment.repository.CommentRepository;
 import com.icomfortableworld.domain.feed.model.FeedModel;
 import com.icomfortableworld.domain.feed.repository.FeedRepository;
 import com.icomfortableworld.domain.member.model.MemberModel;
-import com.icomfortableworld.domain.member.repository.MemberRepository;
+import com.icomfortableworld.domain.member.repository.member.MemberRepository;
 
 import lombok.RequiredArgsConstructor;
 

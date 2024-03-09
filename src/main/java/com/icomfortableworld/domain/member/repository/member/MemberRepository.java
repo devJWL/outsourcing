@@ -1,4 +1,4 @@
-package com.icomfortableworld.domain.member.repository;
+package com.icomfortableworld.domain.member.repository.member;
 
 import java.util.List;
 import java.util.Optional;

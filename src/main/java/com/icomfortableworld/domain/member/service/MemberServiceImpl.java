@@ -24,8 +24,8 @@ import com.icomfortableworld.domain.member.entity.PasswordHistory;
 import com.icomfortableworld.domain.member.exception.CustomMemberException;
 import com.icomfortableworld.domain.member.exception.MemberErrorCode;
 import com.icomfortableworld.domain.member.model.MemberModel;
-import com.icomfortableworld.domain.member.repository.MemberRepository;
-import com.icomfortableworld.domain.member.repository.PasswordHistoryRepository;
+import com.icomfortableworld.domain.member.repository.member.MemberRepository;
+import com.icomfortableworld.domain.member.repository.history.PasswordHistoryJpaRepository;
 import com.icomfortableworld.domain.message.entity.Message;
 import com.icomfortableworld.domain.message.repository.MessageJpaRepository;
 import com.icomfortableworld.jwt.JwtProvider;
@@ -37,7 +37,7 @@ import lombok.RequiredArgsConstructor;
 public class MemberServiceImpl implements MemberService {
 
 	private final MemberRepository memberRepository;
-	private final PasswordHistoryRepository passwordHistoryRepository;
+	private final PasswordHistoryJpaRepository passwordHistoryJpaRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final FollowRepository followRepository;
 	private final MessageJpaRepository messageJpaRepository;
@@ -71,7 +71,7 @@ public class MemberServiceImpl implements MemberService {
 		}
 
 		MemberModel memberModel = memberRepository.save(Member.of(signupRequestDto, password, role));
-		passwordHistoryRepository.save(PasswordHistory.of(memberModel.getMemberId(), password));
+		passwordHistoryJpaRepository.save(PasswordHistory.of(memberModel.getMemberId(), password));
 	}
 
 	@Override

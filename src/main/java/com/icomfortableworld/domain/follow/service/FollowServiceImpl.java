@@ -3,7 +3,7 @@ package com.icomfortableworld.domain.follow.service;
 import com.icomfortableworld.domain.follow.entity.Follow;
 import com.icomfortableworld.domain.follow.repository.FollowRepository;
 import com.icomfortableworld.domain.member.model.MemberModel;
-import com.icomfortableworld.domain.member.repository.MemberRepository;
+import com.icomfortableworld.domain.member.repository.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

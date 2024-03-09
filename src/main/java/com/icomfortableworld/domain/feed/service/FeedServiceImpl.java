@@ -19,7 +19,7 @@ import com.icomfortableworld.domain.follow.entity.Follow;
 import com.icomfortableworld.domain.follow.repository.FollowRepository;
 import com.icomfortableworld.domain.member.entity.MemberRoleEnum;
 import com.icomfortableworld.domain.member.model.MemberModel;
-import com.icomfortableworld.domain.member.repository.MemberRepository;
+import com.icomfortableworld.domain.member.repository.member.MemberRepository;
 import com.icomfortableworld.domain.tag.entity.Tag;
 import com.icomfortableworld.domain.tag.entity.TagSet;
 import com.icomfortableworld.domain.tag.repository.TagRepository;

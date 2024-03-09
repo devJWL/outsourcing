@@ -1,8 +1,10 @@
-package com.icomfortableworld.domain.member.repository;
+package com.icomfortableworld.domain.member.repository.member;
 
 import java.util.List;
 import java.util.Optional;
 
+import com.icomfortableworld.domain.member.repository.history.PasswordHistoryJpaRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
 
@@ -16,10 +18,11 @@ import lombok.RequiredArgsConstructor;
 
 @Repository
 @RequiredArgsConstructor
+@Slf4j
 public class MemberRepositoryImpl implements MemberRepository {
 
 	private final MemberJpaRepository jpaRepository;
-	private final PasswordHistoryRepository passwordHistoryRepository;
+	private final PasswordHistoryJpaRepository passwordHistoryJpaRepository;
 	private final PasswordEncoder passwordEncoder;
 	@Override
 	public Optional<MemberModel> findById(Long memberId) {
@@ -76,14 +79,13 @@ public class MemberRepositoryImpl implements MemberRepository {
 			checkRecent3Password(memberId, newPassword);
 			String encryptedPassword = passwordEncoder.encode(newPassword);
 			member.updatePassword(encryptedPassword);
-			passwordHistoryRepository.save(PasswordHistory.of(memberId, encryptedPassword));
+			passwordHistoryJpaRepository.save(PasswordHistory.of(memberId, encryptedPassword));
 		}
 		return member.toModel();
 	}
 
 	private void checkRecent3Password(Long memberId, String newPassword) {
-		List<PasswordHistory> recent3PasswordList = passwordHistoryRepository.findTop3ByMemberIdOrderByCreatedDateDesc(
-			memberId);
+		List<PasswordHistory> recent3PasswordList = passwordHistoryJpaRepository.find3RecentlyPassword(memberId);
 		if (recent3PasswordList.stream()
 			.anyMatch(passwordHistory -> passwordEncoder.matches(newPassword, passwordHistory.getPassword()))) {
 			throw new CustomMemberException(MemberErrorCode.MEMBER_ERROR_CODE_PASSWORD_RECENTLY_USED);

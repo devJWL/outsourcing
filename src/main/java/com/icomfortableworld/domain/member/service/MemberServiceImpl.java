@@ -49,7 +49,6 @@ public class MemberServiceImpl implements MemberService {
 	@Override
 	public void signup(SignupRequestDto signupRequestDto) {
 		String username = signupRequestDto.getUsername();
-		String password = passwordEncoder.encode(signupRequestDto.getPassword());
 
 		Optional<MemberModel> checkUsername = memberRepository.findByUsername(username);
 		if (checkUsername.isPresent()) {
@@ -70,14 +69,16 @@ public class MemberServiceImpl implements MemberService {
 			role = MemberRoleEnum.ADMIN;
 		}
 
-		MemberModel memberModel = memberRepository.save(Member.of(signupRequestDto, password, role));
-		passwordHistoryJpaRepository.save(PasswordHistory.of(memberModel.getMemberId(), password));
+		String encodedPassword = encodePassword(signupRequestDto.getPassword());
+
+		MemberModel memberModel = memberRepository.save(Member.of(signupRequestDto, encodedPassword, role));
+		passwordHistoryJpaRepository.save(PasswordHistory.of(memberModel.getMemberId(), encodedPassword));
 	}
 
 	@Override
 	public LoginResponseDto login(LoginRequestDto loginRequestDto) {
 		MemberModel memberModel = memberRepository.findByUsernameOrElseThrow(loginRequestDto.getUsername());
-		if (!passwordEncoder.matches(loginRequestDto.getPassword(), memberModel.getPassword())) {
+		if (!isEqualsPassword(loginRequestDto.getPassword(), memberModel.getPassword())) {
 			throw new CustomMemberException(MemberErrorCode.MEMBER_ERROR_CODE_PASSWORD_MISMATCH);
 		}
 		String token = jwtProvider.createToken(memberModel.getUsername(), memberModel.getMemberRoleEnum());
@@ -125,11 +126,11 @@ public class MemberServiceImpl implements MemberService {
 	@Override
 	public MemberUpdateResponseDto updateMember(Long memberId, MemberUpdateRequestDto memberUpdateRequestDto) {
 		MemberModel memberModel = memberRepository.findByIdOrElseThrow(memberId);
-		if (!passwordEncoder.matches(memberUpdateRequestDto.getPassword(), memberModel.getPassword())) {
+		if (!isEqualsPassword(memberUpdateRequestDto.getPassword(), memberModel.getPassword())) {
 			throw new CustomMemberException(MemberErrorCode.MEMBER_ERROR_CODE_PASSWORD_MISMATCH);
 		}
 
-		if (passwordEncoder.matches(memberUpdateRequestDto.getNewPassword(), memberModel.getPassword())) {
+		if (isEqualsPassword(memberUpdateRequestDto.getPassword(), memberModel.getPassword())) {
 			throw new CustomMemberException(MemberErrorCode.MEMBER_ERROR_CODE_PASSWORD_MATCH);
 		}
 
@@ -141,6 +142,14 @@ public class MemberServiceImpl implements MemberService {
 			memberRepository.updateMember(memberId, newNickname, newIntroduction, newPassword));
 	}
 
+
+	private String encodePassword(String password) {
+		return passwordEncoder.encode(password);
+	}
+
+	private boolean isEqualsPassword(String password, String encodedPassword) {
+		return passwordEncoder.matches(password, encodedPassword);
+	}
 	private Long getFollowingCount(Long memberId) {
 		return (long)followRepository.findByFromId(memberId).size();
 	}

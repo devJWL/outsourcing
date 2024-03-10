@@ -9,6 +9,8 @@ public interface TestMember {
     String TEST_MEMBER_EMAIL = "email@email.com";
     String TEST_MEMBER_NICKNAME = "nickname";
     String TEST_MEMBER_PASSWORD = "abcABC123@";
+
+    String TEST_ENCODED_PASSWORD = "oxldis_23";
     String ADMIN_TOKEN = "AAABnvxRVklrnYxKZ0aHgTBcXukeZygoC";
     String TEST_MESSAGE = "message test";
 }

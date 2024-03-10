@@ -3,7 +3,9 @@ package com.icomfortableworld.domain.member.service;
 import com.icomfortableworld.domain.follow.entity.Follow;
 import com.icomfortableworld.domain.follow.repository.FollowRepository;
 import com.icomfortableworld.domain.member.dto.request.LoginRequestDto;
+import com.icomfortableworld.domain.member.dto.request.MemberUpdateRequestDto;
 import com.icomfortableworld.domain.member.dto.request.SignupRequestDto;
+import com.icomfortableworld.domain.member.dto.response.LoginResponseDto;
 import com.icomfortableworld.domain.member.dto.response.MemberResponseDto;
 import com.icomfortableworld.domain.member.dto.response.MemberUpdateResponseDto;
 import com.icomfortableworld.domain.member.entity.Member;
@@ -14,6 +16,10 @@ import com.icomfortableworld.domain.member.exception.MemberErrorCode;
 import com.icomfortableworld.domain.member.model.MemberModel;
 import com.icomfortableworld.domain.member.repository.history.PasswordHistoryJpaRepository;
 import com.icomfortableworld.domain.member.repository.member.MemberRepository;
+import com.icomfortableworld.domain.message.dto.request.MessageRequestDto;
+import com.icomfortableworld.domain.message.entity.Message;
+import com.icomfortableworld.domain.message.repository.MessageJpaRepository;
+import com.icomfortableworld.jwt.JwtProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -22,7 +28,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -45,6 +50,10 @@ class MemberServiceImplTest {
     @Mock
     private FollowRepository followRepository;
     @Mock
+    private JwtProvider jwtProvider;
+    @Mock
+    private MessageJpaRepository messageJpaRepository;
+    @Mock
     PasswordEncoder passwordEncoder;
 
     @InjectMocks
@@ -60,7 +69,6 @@ class MemberServiceImplTest {
             signupRequestDto = new SignupRequestDto(
                     TEST_MEMBER_USERNAME, TEST_MEMBER_EMAIL, TEST_MEMBER_NICKNAME,
                     TEST_MEMBER_PASSWORD, null, false, null);
-            passwordEncoder = new BCryptPasswordEncoder();
         }
 
         @Test
@@ -159,33 +167,32 @@ class MemberServiceImplTest {
 
         @BeforeEach void setUp() {
             loginRequestDto = new LoginRequestDto(TEST_MEMBER_USERNAME, TEST_MEMBER_PASSWORD);
-            passwordEncoder = new BCryptPasswordEncoder();
         }
 
-//        @Test
-//        @DisplayName("로그인 성공 테스트")
-//        void loginSuccessTest() {
-//            // given
-//            String encodedPassword = passwordEncoder.encode(TEST_MEMBER_PASSWORD);
-//            System.out.println("Test : " + encodedPassword);
-//            MemberModel memberModel = new MemberModel(TEST_MEMBER_ID, TEST_MEMBER_USERNAME, TEST_MEMBER_EMAIL, TEST_MEMBER_NICKNAME,
-//                    encodedPassword, null, MemberRoleEnum.USER, null);
-//            MessageRequestDto messageRequestDto = new MessageRequestDto();
-//            messageRequestDto.setReceiverId(TEST_MEMBER_ID);
-//            messageRequestDto.setContent(TEST_MESSAGE);
-//
-//            given(memberRepository.findByUsernameOrElseThrow(loginRequestDto.getUsername())).willReturn(memberModel);
-//            given(jwtProvider.createToken(any(String.class), any(MemberRoleEnum.class))).willReturn("Bearer Token");
-//            given(messageJpaRepository.findByToNameAndIsReadFalse(TEST_MEMBER_USERNAME)).willReturn(List.of(
-//                    new Message(messageRequestDto, TEST_ANTHOER_USERNAME)));
-//            // when
-//            LoginResponseDto loginResponseDto = memberService.login(loginRequestDto);
-//            // then
-//
-//            then(jwtProvider).should(times(1)).createToken(TEST_MEMBER_USERNAME, MemberRoleEnum.USER);
-//            then(messageJpaRepository).should(times(1)).findByToNameAndIsReadFalse(TEST_MEMBER_USERNAME);
-//            assertEquals(TEST_MEMBER_USERNAME, loginResponseDto.getUsername());
-//        }
+        @Test
+        @DisplayName("로그인 성공 테스트")
+        void loginSuccessTest() {
+            // given
+            String encodedPassword = passwordEncoder.encode(TEST_MEMBER_PASSWORD);
+            MemberModel memberModel = new MemberModel(TEST_MEMBER_ID, TEST_MEMBER_USERNAME, TEST_MEMBER_EMAIL, TEST_MEMBER_NICKNAME,
+                    encodedPassword, null, MemberRoleEnum.USER, null);
+            MessageRequestDto messageRequestDto = new MessageRequestDto();
+            messageRequestDto.setReceiverId(TEST_MEMBER_ID);
+            messageRequestDto.setContent(TEST_MESSAGE);
+
+            given(memberRepository.findByUsernameOrElseThrow(loginRequestDto.getUsername())).willReturn(memberModel);
+            given(jwtProvider.createToken(any(String.class), any(MemberRoleEnum.class))).willReturn("Bearer Token");
+            given(messageJpaRepository.findByToNameAndIsReadFalse(TEST_MEMBER_USERNAME)).willReturn(List.of(
+                    new Message(messageRequestDto, TEST_ANOTHOER_USERNAME)));
+            given(passwordEncoder.matches(TEST_MEMBER_PASSWORD, encodedPassword)).willReturn(true);
+            // when
+            LoginResponseDto loginResponseDto = memberService.login(loginRequestDto);
+            // then
+
+            then(jwtProvider).should(times(1)).createToken(TEST_MEMBER_USERNAME, MemberRoleEnum.USER);
+            then(messageJpaRepository).should(times(1)).findByToNameAndIsReadFalse(TEST_MEMBER_USERNAME);
+            assertEquals(TEST_MEMBER_USERNAME, loginResponseDto.getUsername());
+        }
 
         @Test
         @DisplayName("로그인 실패 테스트 비밀번호 불일치")
@@ -310,21 +317,23 @@ class MemberServiceImplTest {
         @DisplayName("회원 정보 변경 성공 테스트")
         void updateMemberSuccessTest() {
             // given
-            String encodedPassword = passwordEncoder.encode(TEST_MEMBER_PASSWORD);
             MemberModel memberModel = new MemberModel(TEST_MEMBER_ID, TEST_MEMBER_USERNAME, TEST_MEMBER_EMAIL, TEST_MEMBER_NICKNAME,
-                    encodedPassword, "null", MemberRoleEnum.USER, null);
+                    TEST_ENCODED_PASSWORD, "null", MemberRoleEnum.USER, null);
             given(memberRepository.findByIdOrElseThrow(TEST_MEMBER_ID)).willReturn(memberModel);
+            given(passwordEncoder.matches(TEST_MEMBER_PASSWORD, TEST_ENCODED_PASSWORD)).willReturn(true);
 
             final String newNickname = "newNickname";
             final String newIntroduction = "newIntroduction";
             final String newPassword = "newPassword";
-            final String encodedNewPassword = passwordEncoder.encode(newPassword);
             MemberModel updatedMemberModel = new MemberModel(TEST_MEMBER_ID, TEST_MEMBER_USERNAME, TEST_MEMBER_EMAIL,
-                    newNickname, encodedNewPassword, newIntroduction, MemberRoleEnum.USER, null);
+                    newNickname, TEST_ENCODED_PASSWORD, newIntroduction, MemberRoleEnum.USER, null);
             given(memberRepository.updateMember(TEST_MEMBER_ID, newNickname, newIntroduction, newPassword))
                     .willReturn(updatedMemberModel);
 
+            MemberUpdateRequestDto memberUpdateRequestDto = new MemberUpdateRequestDto(newNickname, newIntroduction,
+                    TEST_MEMBER_PASSWORD, newPassword);
             // when
+            memberService.updateMember(TEST_MEMBER_ID, memberUpdateRequestDto);
             MemberModel foundModel = memberRepository.findByIdOrElseThrow(TEST_MEMBER_ID);
             MemberUpdateResponseDto memberUpdateResponseDto = MemberUpdateResponseDto
                     .from(memberRepository.updateMember(foundModel.getMemberId(), newNickname, newIntroduction, newPassword));
@@ -334,6 +343,27 @@ class MemberServiceImplTest {
             assertNotEquals(memberModel.getIntroduction(), newIntroduction);
             assertEquals(newNickname, memberUpdateResponseDto.getNickname());
             assertEquals(newIntroduction, memberUpdateResponseDto.getIntroduction());
+        }
+
+        @Test
+        @DisplayName("회원 정보 변경 실패 테스트 비밀번호 불일치")
+        void updateMemberFailTest() {
+            // given
+            MemberModel memberModel = new MemberModel(TEST_MEMBER_ID, TEST_MEMBER_USERNAME, TEST_MEMBER_EMAIL, TEST_MEMBER_NICKNAME,
+                    TEST_ENCODED_PASSWORD, "null", MemberRoleEnum.USER, null);
+            given(memberRepository.findByIdOrElseThrow(TEST_MEMBER_ID)).willReturn(memberModel);
+            given(passwordEncoder.matches(TEST_MEMBER_PASSWORD, TEST_ENCODED_PASSWORD)).willReturn(false);
+            final String newNickname = "newNickname";
+            final String newIntroduction = "newIntroduction";
+            final String newPassword = "newPassword";
+            MemberUpdateRequestDto memberUpdateRequestDto = new MemberUpdateRequestDto(newNickname, newIntroduction,
+                    TEST_MEMBER_PASSWORD, newPassword);
+            // when
+
+            String message = assertThrows(CustomMemberException.class,
+                    () -> memberService.updateMember(TEST_MEMBER_ID, memberUpdateRequestDto)).getMessage();
+            // then
+            assertEquals(MemberErrorCode.MEMBER_ERROR_CODE_PASSWORD_MISMATCH.getMessage(), message);
         }
     }
 }

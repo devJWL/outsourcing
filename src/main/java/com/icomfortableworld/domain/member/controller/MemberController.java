@@ -1,18 +1,5 @@
 package com.icomfortableworld.domain.member.controller;
 
-import java.util.List;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.icomfortableworld.common.dto.CommonResponseDto;
 import com.icomfortableworld.domain.member.dto.request.LoginRequestDto;
 import com.icomfortableworld.domain.member.dto.request.MemberUpdateRequestDto;
@@ -26,10 +13,15 @@ import com.icomfortableworld.domain.member.exception.MemberErrorCode;
 import com.icomfortableworld.domain.member.service.MemberService;
 import com.icomfortableworld.jwt.JwtProvider;
 import com.icomfortableworld.jwt.security.MemberDetailsImpl;
-
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/version-1/members")
@@ -79,6 +71,6 @@ public class MemberController {
 			throw new CustomMemberException(MemberErrorCode.MEMBER_ERROR_CODE_MEMBER_ID_MISMATCH);
 		}
 		return CommonResponseDto.of(HttpStatus.OK, "회원 정보수정 성공",
-			memberService.updateMember(memberId, memberUpdateRequestDto));
+				memberService.updateMember(memberId, memberUpdateRequestDto, memberDetails.getMember().getMemberId()));
 	}
 }

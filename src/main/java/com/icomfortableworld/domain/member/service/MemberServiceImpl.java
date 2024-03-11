@@ -1,15 +1,5 @@
 package com.icomfortableworld.domain.member.service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
 import com.icomfortableworld.domain.follow.repository.FollowRepository;
 import com.icomfortableworld.domain.member.dto.request.LoginRequestDto;
 import com.icomfortableworld.domain.member.dto.request.MemberUpdateRequestDto;
@@ -24,27 +14,33 @@ import com.icomfortableworld.domain.member.entity.PasswordHistory;
 import com.icomfortableworld.domain.member.exception.CustomMemberException;
 import com.icomfortableworld.domain.member.exception.MemberErrorCode;
 import com.icomfortableworld.domain.member.model.MemberModel;
-import com.icomfortableworld.domain.member.repository.member.MemberRepository;
 import com.icomfortableworld.domain.member.repository.history.PasswordHistoryJpaRepository;
+import com.icomfortableworld.domain.member.repository.member.MemberRepository;
 import com.icomfortableworld.domain.message.entity.Message;
 import com.icomfortableworld.domain.message.repository.MessageJpaRepository;
 import com.icomfortableworld.jwt.JwtProvider;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class MemberServiceImpl implements MemberService {
 
-	private final MemberRepository memberRepository;
-	private final PasswordHistoryJpaRepository passwordHistoryJpaRepository;
 	private final PasswordEncoder passwordEncoder;
-	private final FollowRepository followRepository;
-	private final MessageJpaRepository messageJpaRepository;
-
 	private final JwtProvider jwtProvider;
 	@Value("${admin_token}")
 	private String adminToken;
+
+	private final MemberRepository memberRepository;
+	private final PasswordHistoryJpaRepository passwordHistoryJpaRepository;
+	private final FollowRepository followRepository;
+	private final MessageJpaRepository messageJpaRepository;
+
+
 
 	@Override
 	public void signup(SignupRequestDto signupRequestDto) {
@@ -124,8 +120,11 @@ public class MemberServiceImpl implements MemberService {
 	}
 
 	@Override
-	public MemberUpdateResponseDto updateMember(Long memberId, MemberUpdateRequestDto memberUpdateRequestDto) {
+	public MemberUpdateResponseDto updateMember(Long memberId, MemberUpdateRequestDto memberUpdateRequestDto, Long loginMemberId) {
 		MemberModel memberModel = memberRepository.findByIdOrElseThrow(memberId);
+		if (!memberId.equals(loginMemberId)) {
+			throw new CustomMemberException(MemberErrorCode.MEMBER_ERROR_CODE_MEMBER_ID_MISMATCH);
+		}
 		if (!isEqualsPassword(memberUpdateRequestDto.getPassword(), memberModel.getPassword())) {
 			throw new CustomMemberException(MemberErrorCode.MEMBER_ERROR_CODE_PASSWORD_MISMATCH);
 		}

@@ -1,9 +1,5 @@
 package com.icomfortableworld.domain.member.service;
 
-import java.util.List;
-
-import org.springframework.transaction.annotation.Transactional;
-
 import com.icomfortableworld.domain.member.dto.request.LoginRequestDto;
 import com.icomfortableworld.domain.member.dto.request.MemberUpdateRequestDto;
 import com.icomfortableworld.domain.member.dto.request.SignupRequestDto;
@@ -11,6 +7,9 @@ import com.icomfortableworld.domain.member.dto.response.LoginResponseDto;
 import com.icomfortableworld.domain.member.dto.response.MemberResponseDto;
 import com.icomfortableworld.domain.member.dto.response.MemberUpdateResponseDto;
 import com.icomfortableworld.domain.member.entity.MemberRoleEnum;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Transactional
 public interface MemberService {
@@ -25,6 +24,6 @@ public interface MemberService {
 
 	List<MemberResponseDto> getMemebers(MemberRoleEnum memberRoleEnum);
 
-	MemberUpdateResponseDto updateMember(Long memberId, MemberUpdateRequestDto memberUpdateRequestDto);
+	MemberUpdateResponseDto updateMember(Long memberId, MemberUpdateRequestDto memberUpdateRequestDto, Long loginMemberId);
 
 }
